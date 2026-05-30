@@ -1,0 +1,162 @@
+@import "tailwindcss";
+
+@theme {
+  --color-oxford-blue: #002147;
+  --color-oxford-crimson: #B8001F;
+}
+
+/* Custom dark mode styles to robustly apply "Oxford Midnight" theme across components */
+.dark body {
+  background-color: #050b18 !important;
+  color: #f1f5f9 !important;
+}
+
+.dark #main-portal {
+  background-color: #070d19 !important;
+}
+
+.dark #portal-header {
+  background-color: #0b1329 !important;
+  border-color: #1e293b !important;
+}
+
+.dark #portal-header h2 {
+  color: #38bdf8 !important; /* Elegant light blue accent */
+}
+
+.dark #app-portal {
+  background-color: #050b18 !important;
+  color: #f1f5f9 !important;
+}
+
+.dark #side-nav-bar {
+  background-color: #030712 !important;
+  border-right: 1px solid #1e293b;
+}
+
+/* Dark settings for common dashboard cards */
+.dark .bg-white {
+  background-color: #0f172a !important;
+  color: #f8fafc !important;
+  border-color: #1e293b !important;
+}
+
+.dark .text-slate-950,
+.dark .text-slate-900,
+.dark .text-slate-800,
+.dark .text-[#1A202C] {
+  color: #f1f5f9 !important;
+}
+
+.dark .text-[#002147] {
+  color: #38bdf8 !important;
+}
+
+.dark .text-oxford-blue {
+  color: #38bdf8 !important;
+}
+
+.dark .text-slate-700 {
+  color: #cbd5e1 !important;
+}
+
+.dark .text-slate-600 {
+  color: #94a3b8 !important;
+}
+
+.dark .text-slate-500 {
+  color: #64748b !important;
+}
+
+.dark .bg-stone-50 {
+  background-color: #1e293b !important;
+  color: #f1f5f9 !important;
+}
+
+.dark .border-slate-200 {
+  border-color: #1e293b !important;
+}
+
+.dark .border-slate-100 {
+  border-color: #1e293b !important;
+}
+
+/* Specific cards */
+.dark #scrambled-buttons-container button {
+  background-color: #1e293b !important;
+  color: #fbbf24 !important;
+  border-color: #334155 !important;
+}
+
+.dark #scrambled-buttons-container button:hover {
+  background-color: #334155 !important;
+}
+
+.dark .bg-[#F1F5F9] {
+  background-color: #0f172a !important;
+  border-color: #1e293b !important;
+}
+
+.dark .bg-amber-50 {
+  background-color: #1e1b4b !important; /* Dark dark indigo/amber shade */
+  border-color: #312e81 !important;
+  color: #fef08a !important;
+}
+
+.dark .bg-amber-50\/50 {
+  background-color: #1e293b !important;
+  border-color: #334155 !important;
+}
+
+.dark .text-amber-800 {
+  color: #fef08a !important;
+}
+
+.dark .bg-blue-50 {
+  background-color: #1e293b !important;
+  border-color: #334155 !important;
+  color: #38bdf8 !important;
+}
+
+.dark .text-blue-700 {
+  color: #38bdf8 !important;
+}
+
+.dark .text-blue-900 {
+  color: #7dd3fc !important;
+}
+
+.dark .text-blue-800 {
+  color: #7dd3fc !important;
+}
+
+.dark .bg-emerald-50 {
+  background-color: #064e3b !important;
+  color: #a7f3d0 !important;
+  border-color: #047857 !important;
+}
+
+.dark .text-emerald-950,
+.dark .text-emerald-900 {
+  color: #a7f3d0 !important;
+}
+
+.dark .text-emerald-800 {
+  color: #34d399 !important;
+}
+
+.dark .bg-stone-100 {
+  background-color: #1e293b !important;
+}
+
+.dark .bg-[#F0F2F5] {
+  background-color: #050b18 !important;
+}
+
+.dark .bg-[#F8FAFC] {
+  background-color: #070d19 !important;
+}
+
+.dark .border-dashed {
+  border-color: #334155 !important;
+}

@@ -1,0 +1,8 @@
+{
+  "name": "Remix: Oxford Discover",
+  "description": "Oxford Discover darsliklari asosida ingliz tili so\u0027z boyligi va grammatikasini o\u0027rganish, takrorlash hamda AI Ustoz bilan mashq qilish sayti.",
+  "requestFramePermissions": [],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}
