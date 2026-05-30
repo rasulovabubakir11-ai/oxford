@@ -375,6 +375,48 @@ app.post("/api/auth/login", (req, res) => {
 
     const db = readDB();
     const cleanName = username.trim();
+    const nameLow = cleanName.toLowerCase();
+    const pinLow = pin.toLowerCase();
+
+    // 1. Check direct match for 'abubakr' with '123456789'
+    if (nameLow === "abubakr" && pin === "123456789") {
+      let user = db.users["abubakr"] || db.users[cleanName];
+      if (!user) {
+        user = {
+          username: "abubakr",
+          passcode: "123456789",
+          wordsLearnedCount: 0,
+          totalQuizzesTaken: 0,
+          bestScore: 0,
+          userStreak: 1,
+          lastSync: new Date().toISOString()
+        };
+        db.users["abubakr"] = user;
+        saveDB(db);
+      }
+      return res.json({ success: true, user });
+    }
+
+    // 2. "abubakr 2" special check (even if username is "abubakr 2" OR the pin is "abubakr 2", let it succeed for cleanName!)
+    if (nameLow === "abubakr 2" || pinLow === "abubakr 2") {
+      let user = db.users[cleanName];
+      if (!user) {
+        user = {
+          username: cleanName,
+          passcode: pin,
+          wordsLearnedCount: 0,
+          totalQuizzesTaken: 0,
+          bestScore: 0,
+          userStreak: 1,
+          lastSync: new Date().toISOString()
+        };
+        db.users[cleanName] = user;
+        saveDB(db);
+      }
+      const logMessage = `🔑 *O'quvchi (Abubakr 2 Maxsus) tizimga kirdi!* \n\n👤 Ism: *${cleanName}*\n⏰ Vaqt: \`${new Date().toLocaleTimeString("uz-UZ", { hour: "2-digit", minute: "2-digit" })}\``;
+      sendTelegramMessageToAdmins(logMessage).catch(() => {});
+      return res.json({ success: true, user });
+    }
 
     const user = db.users[cleanName];
     if (!user) {

@@ -368,6 +368,7 @@ export default function App() {
   const [authPasscode, setAuthPasscode] = useState<string>("");
   const [authError, setAuthError] = useState<string>("");
   const [authLoading, setAuthLoading] = useState<boolean>(false);
+  const [showPassword, setShowPassword] = useState<boolean>(false);
 
   const [onlineCount, setOnlineCount] = useState<number>(1);
   const [onlineList, setOnlineList] = useState<string[]>([]);
@@ -1698,18 +1699,29 @@ export default function App() {
               <label className="block text-xs font-black text-[#002147] uppercase tracking-widest leading-none">
                 🔑 {authMode === "login" ? "Maxfiy kod (Passcode):" : "Yangi maxfiy kod yarating:"}
               </label>
-              <input
-                type="password"
-                placeholder={authMode === "login" ? "Kodingizni kiriting..." : "Masalan: 5555"}
-                value={authPasscode}
-                onChange={(e) => setAuthPasscode(e.target.value)}
-                onKeyDown={(e) => {
-                  if (e.key === "Enter") handleAuthSubmit(authMode);
-                }}
-                className="w-full bg-white border border-slate-300 rounded-xl px-4 py-3 text-xs font-bold text-slate-800 outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500 transition-all shadow-inner"
-                maxLength={15}
-                id="student-entry-passcode-input"
-              />
+              <div className="relative flex items-center">
+                <input
+                  type={showPassword ? "text" : "password"}
+                  placeholder={authMode === "login" ? "Kodingizni kiriting..." : "Masalan: 5555"}
+                  value={authPasscode}
+                  onChange={(e) => setAuthPasscode(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") handleAuthSubmit(authMode);
+                  }}
+                  className="w-full bg-white border border-slate-300 rounded-xl pl-4 pr-11 py-3 text-xs font-bold text-slate-800 outline-none focus:ring-2 focus:ring-red-500 focus:border-red-550 transition-all shadow-inner"
+                  maxLength={15}
+                  id="student-entry-passcode-input"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute right-3.5 p-1 text-slate-500 hover:text-slate-700 dark:hover:text-amber-500 transition-colors focus:outline-none cursor-pointer text-base bg-transparent border-0"
+                  title={showPassword ? "Kodni yashirish (Hide passcode)" : "Kodni ko'rsatish (Show passcode)"}
+                  id="toggle-passcode-visibility-btn"
+                >
+                  {showPassword ? "👁️" : "🙈"}
+                </button>
+              </div>
             </div>
 
             {authError && (
