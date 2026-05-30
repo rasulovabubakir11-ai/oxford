@@ -7,6 +7,7 @@ import { GrammarChallenge } from "./components/GrammarChallenge";
 import { SinfChatRoom } from "./components/SinfChatRoom";
 import { getListeningDataForUnit } from "./listeningData";
 import { ListeningLab } from "./components/ListeningLab";
+import { AITranslator } from "./components/AITranslator";
 
 interface EnglishVideo {
   id: string;
@@ -273,6 +274,8 @@ import {
   AlertTriangle,
   CheckCircle2,
   ShieldAlert,
+  Languages,
+  Palette,
 } from "lucide-react";
 
 const READING_PRESETS: Record<number, { imageUrl: string; credit: string }> = {
@@ -365,10 +368,8 @@ export default function App() {
 
   // Custom login & register states
   const [authMode, setAuthMode] = useState<"login" | "register">("login");
-  const [authPasscode, setAuthPasscode] = useState<string>("");
   const [authError, setAuthError] = useState<string>("");
   const [authLoading, setAuthLoading] = useState<boolean>(false);
-  const [showPassword, setShowPassword] = useState<boolean>(false);
 
   const [onlineCount, setOnlineCount] = useState<number>(1);
   const [onlineList, setOnlineList] = useState<string[]>([]);
@@ -395,9 +396,25 @@ export default function App() {
   const [totalQuizzesTaken, setTotalQuizzesTaken] = useState<number>(0);
   const [bestScore, setBestScore] = useState<number>(0);
   const [sidebarOpen, setSidebarOpen] = useState<boolean>(true);
+  const [textColorTheme, setTextColorTheme] = useState<string>(() => {
+    return localStorage.getItem("oxford_custom_text_color") || "default";
+  });
+  const [textSizeStyle, setTextSizeStyle] = useState<string>(() => {
+    return localStorage.getItem("oxford_custom_text_size") || "normal";
+  });
+  const [showAppearanceMenu, setShowAppearanceMenu] = useState<boolean>(false);
+  const [showThemeNotify, setShowThemeNotify] = useState<string | null>(null);
 
   // Active Tab/Sub-view inside Unit details: "vocabulary" | "grammar" | "reading" | "ai-coach" | "song" | "word-search" | "listening"
   const [unitTab, setUnitTab] = useState<"vocabulary" | "grammar" | "reading" | "ai-coach" | "song" | "word-search" | "listening">("vocabulary");
+
+
+  useEffect(() => {
+    if (showThemeNotify) {
+      const timer = setTimeout(() => setShowThemeNotify(null), 2000);
+      return () => clearTimeout(timer);
+    }
+  }, [showThemeNotify]);
 
   // Reset tab to vocabulary when switching to a unit that doesn't have a song
   useEffect(() => {
@@ -1508,11 +1525,6 @@ export default function App() {
       speakWord("Please enter your name!");
       return;
     }
-    if (!authPasscode || !authPasscode.trim()) {
-      setAuthError("Iltimos, maxfiy kodni kiriting!");
-      speakWord("Please enter passcode!");
-      return;
-    }
 
     setAuthError("");
     setAuthLoading(true);
@@ -1523,8 +1535,7 @@ export default function App() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          username: studentName.trim(),
-          passcode: authPasscode.trim()
+          username: studentName.trim()
         })
       });
 
@@ -1573,7 +1584,6 @@ export default function App() {
         // Set session state
         sessionStorage.setItem("oxford_has_credentials", "true");
         setUserHasEntered(true);
-        setAuthPasscode("");
 
         speakWord(`Welcome to Oxford Discover, ${cleanName}!`);
 
@@ -1604,7 +1614,6 @@ export default function App() {
   const handleLogOutPortal = () => {
     sessionStorage.removeItem("oxford_has_credentials");
     setUserHasEntered(false);
-    setAuthPasscode("");
     setAuthError("");
     setWordsLearnedCount(0);
     setTotalQuizzesTaken(0);
@@ -1694,36 +1703,6 @@ export default function App() {
               />
             </div>
 
-            {/* Field 2: Password / Entry code */}
-            <div className="space-y-1.5">
-              <label className="block text-xs font-black text-[#002147] uppercase tracking-widest leading-none">
-                🔑 {authMode === "login" ? "Maxfiy kod (Passcode):" : "Yangi maxfiy kod yarating:"}
-              </label>
-              <div className="relative flex items-center">
-                <input
-                  type={showPassword ? "text" : "password"}
-                  placeholder={authMode === "login" ? "Kodingizni kiriting..." : "Masalan: 5555"}
-                  value={authPasscode}
-                  onChange={(e) => setAuthPasscode(e.target.value)}
-                  onKeyDown={(e) => {
-                    if (e.key === "Enter") handleAuthSubmit(authMode);
-                  }}
-                  className="w-full bg-white border border-slate-300 rounded-xl pl-4 pr-11 py-3 text-xs font-bold text-slate-800 outline-none focus:ring-2 focus:ring-red-500 focus:border-red-550 transition-all shadow-inner"
-                  maxLength={15}
-                  id="student-entry-passcode-input"
-                />
-                <button
-                  type="button"
-                  onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-3.5 p-1 text-slate-500 hover:text-slate-700 dark:hover:text-amber-500 transition-colors focus:outline-none cursor-pointer text-base bg-transparent border-0"
-                  title={showPassword ? "Kodni yashirish (Hide passcode)" : "Kodni ko'rsatish (Show passcode)"}
-                  id="toggle-passcode-visibility-btn"
-                >
-                  {showPassword ? "👁️" : "🙈"}
-                </button>
-              </div>
-            </div>
-
             {authError && (
               <p className="text-red-650 text-xs font-black bg-red-50 p-2.5 rounded-lg border border-red-200 leading-tight">
                 ⚠️ {authError}
@@ -1732,8 +1711,8 @@ export default function App() {
 
             <p className="text-[10px] text-slate-500 leading-normal">
               {authMode === "login" 
-                ? "Oldin yaratgan ismingiz va maxfiy kodingiz yordamida kiring. Shunda o'rgangan darajangiz (Level) va dars natijalaringiz joyida tiklanadi." 
-                : "Yangi akkaunt ochish darslarni mutlaqo noldan boshlaydi (eski natijalarni butunlay o'chirib yuboradi) hamda sizga yangi maxfiy kod o'rnatadi!"}
+                ? "Oldin ochgan ism yordamida tezda kiring. Dars darajangiz (Level) va o'rgangan natijalaringiz o'sha zahoti yuklanadi." 
+                : "Yangi akkaunt ochish darslarni noldan boshlaydi va yangi profil profilini yaratadi."}
             </p>
           </div>
 
@@ -1766,8 +1745,80 @@ export default function App() {
     );
   }
 
+  const getCustomStyleOverride = () => {
+    let colorCSS = "";
+    let fontCSS = "";
+
+    if (textColorTheme === "blue") {
+      colorCSS = `
+        /* Override primary dark/light text colors to Oxford Blue */
+        p, span:not(.font-serif), li, button, input, textarea, h1, h2, h3, h4, h5, h6 {
+          color: #002147 !important;
+        }
+        .dark p, .dark span:not(.font-serif), .dark li, .dark button, .dark input, .dark textarea, .dark h1, .dark h2, .dark h3, .dark h4, .dark h5, .dark h6 {
+          color: #e0f2fe !important;
+        }
+      `;
+    } else if (textColorTheme === "purple") {
+      colorCSS = `
+        p, span:not(.font-serif), li, button, input, textarea, h1, h2, h3, h4, h5, h6 {
+          color: #6d28d9 !important;
+        }
+        .dark p, .dark span:not(.font-serif), .dark li, .dark button, .dark input, .dark textarea, .dark h1, .dark h2, .dark h3, .dark h4, .dark h5, .dark h6 {
+          color: #f5f3ff !important;
+        }
+      `;
+    } else if (textColorTheme === "emerald") {
+      colorCSS = `
+        p, span:not(.font-serif), li, button, input, textarea, h1, h2, h3, h4, h5, h6 {
+          color: #047857 !important;
+        }
+        .dark p, .dark span:not(.font-serif), .dark li, .dark button, .dark input, .dark textarea, .dark h1, .dark h2, .dark h3, .dark h4, .dark h5, .dark h6 {
+          color: #ecfdf5 !important;
+        }
+      `;
+    } else if (textColorTheme === "crimson") {
+      colorCSS = `
+        p, span:not(.font-serif), li, button, input, textarea, h1, h2, h3, h4, h5, h6 {
+          color: #B8001F !important;
+        }
+        .dark p, .dark span:not(.font-serif), .dark li, .dark button, .dark input, .dark textarea, .dark h1, .dark h2, .dark h3, .dark h4, .dark h5, .dark h6 {
+          color: #fff1f2 !important;
+        }
+      `;
+    } else if (textColorTheme === "amber") {
+      colorCSS = `
+        p, span:not(.font-serif), li, button, input, textarea, h1, h2, h3, h4, h5, h6 {
+          color: #b45309 !important;
+        }
+        .dark p, .dark span:not(.font-serif), .dark li, .dark button, .dark input, .dark textarea, .dark h1, .dark h2, .dark h3, .dark h4, .dark h5, .dark h6 {
+          color: #fef3c7 !important;
+        }
+      `;
+    }
+
+    if (textSizeStyle === "large") {
+      fontCSS = `
+        p, span, li, button, input, textarea, strong, code {
+          font-size: 104% !important;
+          line-height: 1.6 !important;
+        }
+      `;
+    } else if (textSizeStyle === "extra-large") {
+      fontCSS = `
+        p, span, li, button, input, textarea, strong, code {
+          font-size: 114% !important;
+          line-height: 1.7 !important;
+        }
+      `;
+    }
+
+    return `${colorCSS}\n${fontCSS}`;
+  };
+
   return (
     <div className="flex h-screen w-screen bg-[#F0F2F5] text-[#1A202C] overflow-hidden font-sans relative" id="app-portal">
+      <style dangerouslySetInnerHTML={{ __html: getCustomStyleOverride() }} />
       {/* MOBILE DRAWER BACKDROP CLOSER */}
       {sidebarOpen && (
         <div
@@ -1848,6 +1899,25 @@ export default function App() {
                 </span>
                 <ChevronRight className="w-4 h-4" />
               </div>
+            </button>
+
+            <button
+              onClick={() => {
+                setActiveSegment(AppSection.TRANSLATOR);
+                if (window.innerWidth < 1024) setSidebarOpen(false);
+              }}
+              className={`w-full text-left font-bold px-4 py-3 rounded-xl flex items-center justify-between transition-all ${
+                activeSegment === AppSection.TRANSLATOR
+                  ? "bg-oxford-crimson text-white shadow-md"
+                  : "bg-white/5 text-slate-200 hover:bg-white/10"
+              }`}
+              id="sidebar-translator-btn"
+            >
+              <span className="flex items-center gap-2 text-sm">
+                <Languages className="w-4 h-4 text-amber-400" />
+                AI Tarjimon
+              </span>
+              <ChevronRight className="w-4 h-4" />
             </button>
           </div>
 
@@ -2059,19 +2129,249 @@ export default function App() {
                 🚪 Chiqish
               </button>
 
-              {/* Dark mode persistent toggle button */}
-              <button
-                onClick={() => setDarkMode(!darkMode)}
-                className="p-2 rounded-xl border border-slate-200 hover:bg-slate-50 text-slate-600 hover:text-slate-900 transition-all cursor-pointer flex items-center justify-center bg-white"
-                title={darkMode ? "Yorug' rejimga o'tish" : "Muzday 'Oxford Midnight' rejimiga o'tish"}
-                id="dark-mode-toggle-btn"
-              >
-                {darkMode ? (
-                  <Sun className="w-[18px] h-[18px] text-amber-400 fill-amber-400" />
-                ) : (
-                  <Moon className="w-[18px] h-[18px] text-slate-700" />
+              {/* Harflar o'lchami va yozuvlar rangi sozlagichi (Appearance customizer dropdown) */}
+              <div className="relative">
+                <button
+                  onClick={() => setShowAppearanceMenu(!showAppearanceMenu)}
+                  className="p-2 rounded-xl border border-slate-200 hover:bg-slate-50 text-slate-600 hover:text-slate-900 transition-all cursor-pointer flex items-center justify-center bg-white gap-1"
+                  title="Yozuvlar rangi va harflar o'lchamini o'zingizga moslang (Customize Text & Colors)"
+                  id="appearance-customize-btn"
+                >
+                  <Palette className="w-[18px] h-[18px] text-indigo-500" />
+                  <span className="hidden md:inline text-[10px] font-bold text-slate-700">Rang & Shrift</span>
+                </button>
+
+                {showAppearanceMenu && (
+                  <div className="absolute right-0 mt-2.5 w-64 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-xl p-4 z-50 space-y-4 text-slate-900 dark:text-white" id="appearance-dropdown-menu">
+                    <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-2">
+                      <h4 className="text-xs font-black text-[#002147] dark:text-sky-400 uppercase tracking-wider flex items-center gap-1.5">
+                        🎨 Yozuvlarni Sozlash
+                      </h4>
+                      <button
+                        onClick={() => setShowAppearanceMenu(false)}
+                        className="text-slate-450 hover:text-slate-600 dark:hover:text-slate-300 text-xs font-bold cursor-pointer bg-transparent border-0"
+                      >
+                        Yopish
+                      </button>
+                    </div>
+
+                    {/* Choose primary text colors */}
+                    <div className="space-y-2">
+                      <span className="text-[10px] font-black uppercase text-slate-400 dark:text-slate-500 tracking-wider block text-left">Yozuvlar rangi (Text Color):</span>
+                      <div className="grid grid-cols-2 gap-1.5 text-left">
+                        <button
+                          onClick={() => {
+                            setTextColorTheme("default");
+                            localStorage.setItem("oxford_custom_text_color", "default");
+                          }}
+                          className={`px-2 py-1.5 rounded-lg text-[10px] font-bold border transition-all cursor-pointer text-left ${
+                            textColorTheme === "default" 
+                              ? "bg-slate-100 border-slate-400 text-slate-900 font-extrabold" 
+                              : "border-slate-200/50 text-slate-605 dark:text-slate-300 hover:bg-slate-50"
+                          }`}
+                        >
+                          ⚫ Standart (Coal)
+                        </button>
+                        <button
+                          onClick={() => {
+                            setTextColorTheme("blue");
+                            localStorage.setItem("oxford_custom_text_color", "blue");
+                          }}
+                          className={`px-2 py-1.5 rounded-lg text-[10px] font-bold border transition-all cursor-pointer text-left ${
+                            textColorTheme === "blue" 
+                              ? "bg-blue-50 border-blue-400 text-blue-900 font-extrabold" 
+                              : "border-slate-200/50 text-slate-605 dark:text-slate-300 hover:bg-slate-50"
+                          }`}
+                        >
+                          🔵 Tole' Ko'k
+                        </button>
+                        <button
+                          onClick={() => {
+                            setTextColorTheme("purple");
+                            localStorage.setItem("oxford_custom_text_color", "purple");
+                          }}
+                          className={`px-2 py-1.5 rounded-lg text-[10px] font-bold border transition-all cursor-pointer text-left ${
+                            textColorTheme === "purple" 
+                              ? "bg-purple-50 border-purple-400 text-purple-900 font-extrabold" 
+                              : "border-slate-200/50 text-slate-605 dark:text-slate-300 hover:bg-slate-50"
+                          }`}
+                        >
+                          🟣 To'q Binafsha
+                        </button>
+                        <button
+                          onClick={() => {
+                            setTextColorTheme("emerald");
+                            localStorage.setItem("oxford_custom_text_color", "emerald");
+                          }}
+                          className={`px-2 py-1.5 rounded-lg text-[10px] font-bold border transition-all cursor-pointer text-left ${
+                            textColorTheme === "emerald" 
+                              ? "bg-emerald-50 border-emerald-400 text-emerald-900 font-extrabold" 
+                              : "border-slate-200/50 text-slate-605 dark:text-slate-300 hover:bg-slate-50"
+                          }`}
+                        >
+                          🟢 Zümrad Yashil
+                        </button>
+                        <button
+                          onClick={() => {
+                            setTextColorTheme("crimson");
+                            localStorage.setItem("oxford_custom_text_color", "crimson");
+                          }}
+                          className={`px-2 py-1.5 rounded-lg text-[10px] font-bold border transition-all cursor-pointer text-left ${
+                            textColorTheme === "crimson" 
+                              ? "bg-rose-50 border-rose-400 text-rose-900 font-extrabold" 
+                              : "border-slate-200/50 text-slate-605 dark:text-slate-300 hover:bg-slate-50"
+                          }`}
+                        >
+                          🔴 Oxford Qizil
+                        </button>
+                        <button
+                          onClick={() => {
+                            setTextColorTheme("amber");
+                            localStorage.setItem("oxford_custom_text_color", "amber");
+                          }}
+                          className={`px-2 py-1.5 rounded-lg text-[10px] font-bold border transition-all cursor-pointer text-left ${
+                            textColorTheme === "amber" 
+                              ? "bg-amber-50 border-amber-400 text-amber-900 font-extrabold" 
+                              : "border-slate-200/50 text-slate-605 dark:text-slate-300 hover:bg-slate-50"
+                          }`}
+                        >
+                          🟡 Zarhal Oltin
+                        </button>
+                      </div>
+                    </div>
+
+                    {/* Font size selectors */}
+                    <div className="space-y-2 border-t border-slate-100 dark:border-slate-800 pt-3">
+                      <span className="text-[10px] font-black uppercase text-slate-400 dark:text-slate-500 tracking-wider block text-left">Harflar o'lchami (Font Size):</span>
+                      <div className="grid grid-cols-3 gap-1.5">
+                        <button
+                          onClick={() => {
+                            setTextSizeStyle("normal");
+                            localStorage.setItem("oxford_custom_text_size", "normal");
+                          }}
+                          className={`px-2 py-1.5 rounded-lg text-[10px] font-bold border transition-all cursor-pointer ${
+                            textSizeStyle === "normal" 
+                              ? "bg-slate-100 border-slate-450 text-slate-900" 
+                              : "border-slate-200/50 text-slate-600 hover:bg-slate-50"
+                          }`}
+                        >
+                          A
+                        </button>
+                        <button
+                          onClick={() => {
+                            setTextSizeStyle("large");
+                            localStorage.setItem("oxford_custom_text_size", "large");
+                          }}
+                          className={`px-2 py-1.5 rounded-lg text-[10px] font-bold border transition-all cursor-pointer ${
+                            textSizeStyle === "large" 
+                              ? "bg-slate-105 border-slate-450 text-slate-900 text-sm font-extrabold" 
+                              : "border-slate-200/50 text-slate-600 hover:bg-slate-50"
+                          }`}
+                        >
+                          A+
+                        </button>
+                        <button
+                          onClick={() => {
+                            setTextSizeStyle("extra-large");
+                            localStorage.setItem("oxford_custom_text_size", "extra-large");
+                          }}
+                          className={`px-2 py-1.5 rounded-lg text-[10px] font-bold border transition-all cursor-pointer ${
+                            textSizeStyle === "extra-large" 
+                              ? "bg-slate-110 border-slate-450 text-slate-900 text-base font-black" 
+                              : "border-slate-200/50 text-slate-600 hover:bg-slate-50"
+                          }`}
+                        >
+                          A++
+                        </button>
+                      </div>
+                    </div>
+
+                    <div className="text-[9px] text-slate-400 leading-normal text-center bg-slate-50 dark:bg-slate-950 p-2 rounded-xl">
+                      Ranglar va harflar o'lchami barcha darslik matnlari hamda xonalarga darhol ta'sir qiladi!
+                    </div>
+                  </div>
                 )}
-              </button>
+              </div>
+
+              {/* Dark mode persistent toggle button */}
+              <div className="relative flex items-center select-none" id="theme-switch-wrapper">
+                <motion.button
+                  whileHover={{ scale: 1.08 }}
+                  whileTap={{ scale: 0.95 }}
+                  onClick={() => {
+                    const nextMode = !darkMode;
+                    setDarkMode(nextMode);
+                    setShowThemeNotify(nextMode ? "tun" : "kun");
+                  }}
+                  className={`relative h-9 w-20 rounded-full p-1 transition-all duration-300 shadow-sm flex items-center justify-between cursor-pointer border ${
+                    darkMode 
+                      ? "bg-[#0b1329] border-sky-500/55 shadow-sky-500/10" 
+                      : "bg-amber-100/40 border-amber-300 shadow-amber-300/10"
+                  }`}
+                  title={darkMode ? "Yorug' rejimga o'tish (Switch to Light Mode)" : "Muzday 'Oxford Midnight' rejimiga o'tish (Switch to Dark Mode)"}
+                  id="dark-mode-toggle-btn"
+                >
+                  {/* Sliding physical handle indicator */}
+                  <motion.div
+                    layout
+                    transition={{ type: "spring", stiffness: 450, damping: 24 }}
+                    className={`absolute z-10 w-7 h-7 rounded-full flex items-center justify-center shadow-md ${
+                      darkMode 
+                        ? "right-1 bg-gradient-to-tr from-indigo-750 to-sky-500 text-white" 
+                        : "left-1 bg-gradient-to-tr from-amber-400 to-amber-500 text-slate-900"
+                    }`}
+                  >
+                    {darkMode ? (
+                      <motion.div 
+                        animate={{ rotate: [-8, 8, -8] }} 
+                        transition={{ repeat: Infinity, duration: 4, ease: "easeInOut" }}
+                      >
+                        <Moon className="w-3.5 h-3.5 text-sky-100 fill-sky-200" />
+                      </motion.div>
+                    ) : (
+                      <motion.div 
+                        animate={{ rotate: 360 }} 
+                        transition={{ repeat: Infinity, duration: 12, ease: "linear" }}
+                      >
+                        <Sun className="w-3.5 h-3.5 text-white fill-amber-50" />
+                      </motion.div>
+                    )}
+                  </motion.div>
+
+                  {/* Inner label decorations for aesthetic pairing */}
+                  <span className={`text-[8px] font-black tracking-widest pl-2.5 transition-opacity duration-300 select-none text-sky-300 ${darkMode ? "opacity-100 ml-7" : "opacity-0"}`}>
+                    TUN
+                  </span>
+                  <span className={`text-[8px] font-black tracking-widest pr-2.5 transition-opacity duration-300 select-none text-amber-700 ${darkMode ? "opacity-0" : "opacity-100 mr-1"}`}>
+                    KUN
+                  </span>
+                </motion.button>
+
+                {/* Floating Animated Theme Notifier Bubble on top side */}
+                <AnimatePresence>
+                  {showThemeNotify && (
+                    <motion.div
+                      initial={{ opacity: 0, y: 15, scale: 0.8 }}
+                      animate={{ opacity: 1, y: -40, scale: 1 }}
+                      exit={{ opacity: 0, y: -55, scale: 0.8, transition: { duration: 0.15 } }}
+                      transition={{ type: "spring", stiffness: 350, damping: 18 }}
+                      className="absolute left-1/2 transform -translate-x-1/2 bg-[#002147] dark:bg-[#0b1329] text-white text-[9px] font-black py-1 px-2.5 rounded-full flex items-center justify-center gap-1.5 shadow-xl whitespace-nowrap border border-white/10 z-50 pointer-events-none"
+                    >
+                      {showThemeNotify === "tun" ? (
+                        <>
+                          <span className="w-1.5 h-1.5 rounded-full bg-indigo-400 animate-ping shrink-0" />
+                          <span>🌌 Oxford Midnight!</span>
+                        </>
+                      ) : (
+                        <>
+                          <span className="w-1.5 h-1.5 rounded-full bg-amber-400 animate-ping shrink-0" />
+                          <span>☀️ Kunduzgi Rejim!</span>
+                        </>
+                      )}
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              </div>
 
               {/* Streak info */}
               <div className="bg-amber-50 border border-amber-200 px-3 py-1.5 rounded-xl flex items-center gap-1.5 text-amber-800 text-xs font-bold shadow-xs select-none">
@@ -4010,6 +4310,12 @@ export default function App() {
                 onAwardPoints={awardPoints}
                 speakWord={(w) => speakWord(w)}
               />
+            </div>
+          )}
+
+          {activeSegment === AppSection.TRANSLATOR && (
+            <div className="space-y-6" id="ai-translator-route-wrapper">
+              <AITranslator speakWord={speakWord} />
             </div>
           )}
         </div>

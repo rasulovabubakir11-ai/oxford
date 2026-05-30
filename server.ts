@@ -118,6 +118,52 @@ Please dynamically use this detailed unit details information to educate the use
   }
 });
 
+// AI Translation Endpoint
+app.post("/api/translate", async (req, res) => {
+  try {
+    const { text, direction } = req.body; // 'auto', 'en-uz', 'uz-en'
+
+    if (!ai) {
+      return res.status(503).json({
+        error: "AI xizmati hozircha faol emas (API kalit topilmadi). Iltimos, keyinchalik urinib ko'ring yoki sozlamalardan GEMINI_API_KEY ni faollashtiring.",
+      });
+    }
+
+    if (!text || typeof text !== "string" || !text.trim()) {
+      return res.status(400).json({ error: "Tarjima qilinadigan matn bo'sh bo'lishi mumkin emas!" });
+    }
+
+    let instruction = `You are "Oxford AI Tarjimon", a professional English-Uzbek and Uzbek-English translator.
+Task: Translate the user's input text accurately and contextually.
+
+${direction === 'en-uz' ? 'Translate from English to Uzbek.' : direction === 'uz-en' ? 'Translate from Uzbek to English.' : 'Auto-detect the language (English or Uzbek) and translate it to the other language.'}
+
+Provide the response in the following beautiful and clear layout using rich Markdown:
+1. **Tarjima (Translation)**: The translated text, put in a blockquote or a clean bold statement.
+2. **Grammatika & So'z Boyligi Tahlili (Optional but highly recommended)**:
+   - If translated to Uzbek, explain any interesting vocabulary, grammar structures, or pronunciation tips. Provide synonyms.
+   - If translated to English, show how to use the translated terms in 2 simple examples.
+Keep the style educational and perfectly formatted.`;
+
+    const response = await ai.models.generateContent({
+      model: "gemini-3.5-flash",
+      contents: [{ role: "user", parts: [{ text: text }] }],
+      config: {
+        systemInstruction: instruction,
+        temperature: 0.3,
+      },
+    });
+
+    const translatedText = response.text || "Tarjima qilishda xatolik yuz berdi.";
+    res.json({ result: translatedText });
+  } catch (error: any) {
+    console.error("Error in AI Translate API:", error);
+    res.status(500).json({
+      error: "Tizimda xatolik yuz berdi: " + (error.message || "Noaniq xatolik"),
+    });
+  }
+});
+
 // JSON Local Database for persistency of web-user stats and Telegram Bot admins
 interface UserStats {
   username: string;
@@ -322,13 +368,9 @@ async function sendTelegramMessageToAdmins(textMsg: string) {
 // Register endpoint
 app.post("/api/auth/register", (req, res) => {
   try {
-    const { username, passcode } = req.body;
+    const { username } = req.body;
     if (!username || typeof username !== "string" || !username.trim()) {
       return res.status(400).json({ error: "Ism taqdim etilishi shart!" });
-    }
-    const pin = String(passcode || "").trim();
-    if (!pin) {
-      return res.status(400).json({ error: "Maxfiy kod taqdim etilishi shart!" });
     }
 
     const db = readDB();
@@ -337,7 +379,7 @@ app.post("/api/auth/register", (req, res) => {
 
     const newUser: UserStats = {
       username: cleanName,
-      passcode: pin,
+      passcode: "",
       wordsLearnedCount: 0,
       totalQuizzesTaken: 0,
       bestScore: 0,
@@ -350,8 +392,8 @@ app.post("/api/auth/register", (req, res) => {
 
     // Notify telegram admin about register
     const logMessage = isOverwritten
-      ? `🔄 *O'quvchi akkaunti noldan qayta ochildi!*\n\n👤 Ism: *${cleanName}*\n🔑 Yangi Kod: \`${pin}\`\n⚠️ *Oldingi barcha natijalari butunlay o'chirildi (noldan boshlandi)!*\n⏰ Vaqt: \`${new Date().toLocaleTimeString("uz-UZ", { hour: "2-digit", minute: "2-digit" })}\``
-      : `🆕 *Yangi o'quvchi ro'yxatdan o'tdi!*\n\n👤 Ism: *${cleanName}*\n🔑 Kod: \`${pin}\`\n⏰ Vaqt: \`${new Date().toLocaleTimeString("uz-UZ", { hour: "2-digit", minute: "2-digit" })}\``;
+      ? `🔄 *O'quvchi akkaunti noldan qayta ochildi!*\n\n👤 Ism: *${cleanName}*\n⏰ Vaqt: \`${new Date().toLocaleTimeString("uz-UZ", { hour: "2-digit", minute: "2-digit" })}\``
+      : `🆕 *Yangi o'quvchi ro'yxatdan o'tdi!*\n\n👤 Ism: *${cleanName}*\n⏰ Vaqt: \`${new Date().toLocaleTimeString("uz-UZ", { hour: "2-digit", minute: "2-digit" })}\``;
     sendTelegramMessageToAdmins(logMessage).catch(() => {});
 
     res.json({ success: true, user: newUser });
@@ -364,46 +406,22 @@ app.post("/api/auth/register", (req, res) => {
 // Login endpoint
 app.post("/api/auth/login", (req, res) => {
   try {
-    const { username, passcode } = req.body;
+    const { username } = req.body;
     if (!username || typeof username !== "string" || !username.trim()) {
       return res.status(400).json({ error: "Ism taqdim etilishi shart!" });
-    }
-    const pin = String(passcode || "").trim();
-    if (!pin) {
-      return res.status(400).json({ error: "Maxfiy kod taqdim etilishi shart!" });
     }
 
     const db = readDB();
     const cleanName = username.trim();
     const nameLow = cleanName.toLowerCase();
-    const pinLow = pin.toLowerCase();
 
-    // 1. Check direct match for 'abubakr' with '123456789'
-    if (nameLow === "abubakr" && pin === "123456789") {
-      let user = db.users["abubakr"] || db.users[cleanName];
-      if (!user) {
-        user = {
-          username: "abubakr",
-          passcode: "123456789",
-          wordsLearnedCount: 0,
-          totalQuizzesTaken: 0,
-          bestScore: 0,
-          userStreak: 1,
-          lastSync: new Date().toISOString()
-        };
-        db.users["abubakr"] = user;
-        saveDB(db);
-      }
-      return res.json({ success: true, user });
-    }
-
-    // 2. "abubakr 2" special check (even if username is "abubakr 2" OR the pin is "abubakr 2", let it succeed for cleanName!)
-    if (nameLow === "abubakr 2" || pinLow === "abubakr 2") {
+    // Special check for 'abubakr' or 'abubakr 2' or similar
+    if (nameLow === "abubakr" || nameLow === "abubakr 2") {
       let user = db.users[cleanName];
       if (!user) {
         user = {
           username: cleanName,
-          passcode: pin,
+          passcode: "",
           wordsLearnedCount: 0,
           totalQuizzesTaken: 0,
           bestScore: 0,
@@ -413,7 +431,7 @@ app.post("/api/auth/login", (req, res) => {
         db.users[cleanName] = user;
         saveDB(db);
       }
-      const logMessage = `🔑 *O'quvchi (Abubakr 2 Maxsus) tizimga kirdi!* \n\n👤 Ism: *${cleanName}*\n⏰ Vaqt: \`${new Date().toLocaleTimeString("uz-UZ", { hour: "2-digit", minute: "2-digit" })}\``;
+      const logMessage = `🔑 *O'quvchi (Abubakr Maxsus) tizimga kirdi!* \n\n👤 Ism: *${cleanName}*\n⏰ Vaqt: \`${new Date().toLocaleTimeString("uz-UZ", { hour: "2-digit", minute: "2-digit" })}\``;
       sendTelegramMessageToAdmins(logMessage).catch(() => {});
       return res.json({ success: true, user });
     }
@@ -421,16 +439,6 @@ app.post("/api/auth/login", (req, res) => {
     const user = db.users[cleanName];
     if (!user) {
       return res.status(404).json({ error: "Bunday ismli o'quvchi topilmadi! Iltimos, ismni to'g'ri yozing yoki Yangi Akkaunt oching." });
-    }
-
-    if (user.passcode && user.passcode !== pin) {
-      return res.status(401).json({ error: "Noto'g'ri maxfiy kod! Iltimos, qaytadan urinib ko'ring." });
-    }
-
-    if (!user.passcode) {
-      user.passcode = pin;
-      db.users[cleanName] = user;
-      saveDB(db);
     }
 
     // Notify telegram admin about login

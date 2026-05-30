@@ -6,7 +6,8 @@ export enum AppSection {
   QUIZ_MODE = "QUIZ_MODE",
   AI_COACH = "AI_COACH",
   READING_PRACTICE = "READING_PRACTICE",
-  CHAT_ROOM = "CHAT_ROOM"
+  CHAT_ROOM = "CHAT_ROOM",
+  TRANSLATOR = "TRANSLATOR"
 }
 
 export interface VocabularyWord {
